@@ -1,0 +1,293 @@
+# Jenkins Remoting Project - Dependencies and Requirements
+
+## System Requirements
+
+### Jenkins Controller (Ubuntu 22.04 LTS)
+```bash
+# Core dependencies
+- Ubuntu 22.04 LTS
+- Java OpenJDK 17
+- Jenkins LTS (latest version)
+- SSH client/server
+- curl, wget, git
+
+# Installation commands
+sudo apt update
+sudo apt install -y openjdk-17-jdk curl wget git openssh-server
+```
+
+### Linux Agents Dependencies
+
+#### Docker Agent (agent-ubuntu-docker)
+```bash
+# Base dependencies
+- Ubuntu 22.04 LTS
+- Java OpenJDK 17
+- Docker Engine
+- SSH server
+
+# Installation commands
+sudo apt update
+sudo apt install -y openjdk-17-jdk openssh-server
+
+# Docker installation
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io
+```
+
+#### Maven Agent (agent-ubuntu-maven)
+```bash
+# Dependencies
+- Ubuntu 22.04 LTS  
+- Java OpenJDK 17
+- Apache Maven 3.8+
+- SSH server
+- Git
+
+# Installation commands
+sudo apt update
+sudo apt install -y openjdk-17-jdk maven git openssh-server
+```
+
+### Windows Agent Dependencies
+```powershell
+# Core requirements
+- Windows Server 2019/2022 or Windows 10/11
+- Java JRE/JDK 17
+- WinSW (Windows Service Wrapper)
+- PowerShell 5.0+
+
+# Manual installations required:
+# 1. Java 17 from https://adoptium.net/temurin/releases/?version=17
+# 2. WinSW from https://github.com/winsw/winsw/releases/latest
+```
+
+## Jenkins Plugin Dependencies
+
+### Required Jenkins Plugins
+```
+# Core plugins (usually included with suggested plugins)
+- Pipeline
+- Pipeline: Stage View
+- Pipeline: Build Step
+- SSH Build Agents
+- Credentials
+- Credentials Binding
+- Git
+- GitHub
+- Workspace Cleanup
+
+# Additional recommended plugins
+- Docker Pipeline
+- Docker Commons
+- Blue Ocean (optional, for better UI)
+- Build Timeout
+- Timestamper
+- AnsiColor
+```
+
+### Installation via Jenkins CLI
+```bash
+# Download Jenkins CLI
+wget http://YOUR_JENKINS_URL:8080/jnlpJars/jenkins-cli.jar
+
+# Install plugins
+java -jar jenkins-cli.jar -s http://YOUR_JENKINS_URL:8080/ -auth admin:password install-plugin ssh-slaves
+java -jar jenkins-cli.jar -s http://YOUR_JENKINS_URL:8080/ -auth admin:password install-plugin docker-workflow
+java -jar jenkins-cli.jar -s http://YOUR_JENKINS_URL:8080/ -auth admin:password restart
+```
+
+## Network Requirements
+
+### Security Groups (AWS EC2)
+
+#### Jenkins Controller
+```
+Inbound Rules:
+- SSH (22) from your IP
+- HTTP (8080) from your IP or 0.0.0.0/0
+- Custom TCP (50000) from agent IPs (for JNLP)
+
+Outbound Rules:
+- All traffic to 0.0.0.0/0
+```
+
+#### Linux Agents
+```
+Inbound Rules:
+- SSH (22) from controller IP
+- Custom TCP (ephemeral ports) from controller IP
+
+Outbound Rules:
+- HTTP/HTTPS (80/443) to 0.0.0.0/0
+- Custom TCP (8080) to controller IP
+```
+
+#### Windows Agent
+```
+Inbound Rules:
+- RDP (3389) from your IP (for management)
+- Custom TCP (ephemeral ports) from controller IP
+
+Outbound Rules:
+- HTTP/HTTPS (80/443) to 0.0.0.0/0  
+- Custom TCP (8080) to controller IP
+```
+
+## Docker Hub Integration
+
+### Required Credentials
+```bash
+# Docker Hub credentials needed in Jenkins
+# Navigate to: Manage Jenkins > Credentials > Global > Add Credentials
+
+Credential Type: Username with password
+ID: dockerhub-creds
+Username: pmayors
+Password: **********
+```
+
+### Docker Hub Repository
+```bash
+# Repository structure
+pmayors/jenkinsjob:latest
+
+# Example commands for manual testing
+docker login -u pmayors
+docker tag local-image your-username/jenkinsjob:latest
+docker push pmayors/jenkinsjob:latest
+```
+
+## SSH Key Requirements
+
+### Key Generation (ED25519 - Recommended)
+```bash
+# On Jenkins Controller
+sudo -u jenkins ssh-keygen -t ed25519 -f /var/lib/jenkins/.ssh/jenkins_agent_key -N ""
+
+# Key files created:
+# - jenkins_agent_key (private key)
+# - jenkins_agent_key.pub (public key)
+```
+
+### SSH Configuration
+```bash
+# Controller SSH config (/var/lib/jenkins/.ssh/config)
+Host *
+    IdentityFile /var/lib/jenkins/.ssh/jenkins_agent_key
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+    ConnectTimeout 30
+    ServerAliveInterval 60
+```
+
+## Maven Project Dependencies (Spring PetClinic)
+
+### Maven Dependencies (from project)
+```xml
+<!-- Key dependencies from Spring PetClinic -->
+<parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>2.7.x</version>
+</parent>
+
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+</dependencies>
+```
+
+### Build Requirements
+```bash
+# Maven requirements
+- Maven 3.8+
+- Java 17
+- Internet connection (for dependency download)
+- Sufficient disk space (~500MB for dependencies)
+```
+
+## Environment Variables
+
+### Jenkins Controller Environment
+```bash
+# Optional environment variables
+JENKINS_HOME=/var/lib/jenkins
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+MAVEN_HOME=/usr/share/maven
+DOCKER_HOST=unix:///var/run/docker.sock
+```
+
+### Agent Environment Variables
+```bash
+# Linux Agents
+JENKINS_AGENT_WORKDIR=/home/jenkins/agent
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+
+# Windows Agent
+JENKINS_AGENT_WORKDIR=C:\jenkins
+JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-17.x.x.x-hotspot
+```
+
+## Minimum Hardware Requirements
+
+### Jenkins Controller
+- CPU: 2 vCPUs (t2.medium)
+- RAM: 4GB
+- Storage: 20GB SSD
+- Network: 1 Gbps
+
+### Linux Agents
+- CPU: 1 vCPU (t2.micro/small)
+- RAM: 2GB
+- Storage: 10GB SSD
+- Network: 1 Gbps
+
+### Windows Agent
+- CPU: 2 vCPUs (t2.small/medium)
+- RAM: 4GB
+- Storage: 30GB SSD
+- Network: 1 Gbps
+
+## Monitoring and Logging
+
+### Log Locations
+```bash
+# Jenkins Controller
+/var/log/jenkins/jenkins.log
+/var/lib/jenkins/logs/
+
+# Linux Agents
+/home/jenkins/agent/logs/
+/var/log/syslog
+
+# Windows Agent
+C:\jenkins\logs\
+Windows Event Viewer
+```
+
+### Health Checks
+```bash
+# Jenkins service status
+systemctl status jenkins
+
+# Agent connectivity
+ssh -i key jenkins@agent-ip "java -version"
+
+# Docker service (on docker agent)
+systemctl status docker
+docker ps
+```
