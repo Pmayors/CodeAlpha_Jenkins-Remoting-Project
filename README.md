@@ -4,7 +4,7 @@ A comprehensive Jenkins remoting setup demonstrating distributed builds across m
 **🚀 Features**
 
 Multi-Agent Distribution: Specialized agents for different build types
-Security Hardened: SSH key authentication, disabled controller executors
+Security Hardened: SSH key authentication, disabled controller executors.
 Cross-Platform: Linux (Ubuntu) and Windows agent support
 Docker Integration: Container building and deployment
 Pipeline Automation: Complete CI/CD workflow
