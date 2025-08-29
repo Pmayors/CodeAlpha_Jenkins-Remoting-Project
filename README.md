@@ -1,6 +1,6 @@
 **Jenkins Distributed Build System on AWS
-A comprehensive Jenkins remoting setup demonstrating distributed builds across multiple specialized agents on AWS EC2 infrastructure.
-**
+A comprehensive Jenkins remoting setup demonstrating distributed builds across multiple specialized agents on AWS EC2 infrastructure.**
+
 **🚀 Features**
 
 Multi-Agent Distribution: Specialized agents for different build types
